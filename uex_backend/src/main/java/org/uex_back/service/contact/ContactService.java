@@ -115,16 +115,15 @@ public class ContactService {
     }
 
     private void validateDuplicateCpf(User user, String cpf, Long currentId) {
-        boolean exists;
-        if (currentId == null) {
-            exists = contactRepository.existsByUserAndCpf(user, cpf);
-        } else {
-            exists = contactRepository.existsByUserAndCpfAndIdNot(user, cpf, currentId);
-        }
-
-        if (exists) {
+        if (existsCpfForUser(user, cpf, currentId)) {
             throw new CpfAlreadyInUseException(cpf);
         }
+    }
+
+    private boolean existsCpfForUser(User user, String cpf, Long currentId) {
+        return currentId == null
+                ? contactRepository.existsByUserAndCpf(user, cpf)
+                : contactRepository.existsByUserAndCpfAndIdNot(user, cpf, currentId);
     }
 
     private ContactResponse toResponse(Contact c) {

@@ -5,6 +5,8 @@ import org.modelmapper.ModelMapper;
 import org.uex_back.dto.contact.ContactPageResponse;
 import org.uex_back.dto.contact.ContactRequest;
 import org.uex_back.dto.contact.ContactResponse;
+import org.uex_back.exceptionhandler.CpfAlreadyInUseException;
+import org.uex_back.exceptionhandler.InvalidCpfException;
 import org.uex_back.model.Contact;
 import org.uex_back.model.User;
 import org.uex_back.repository.ContactRepository;
@@ -108,7 +110,7 @@ public class ContactService {
 
     private void validateCpf(String cpf) {
         if (!CpfValidator.isValid(cpf)) {
-            throw new RuntimeException("CPF inválido");
+            throw new InvalidCpfException();
         }
     }
 
@@ -121,7 +123,7 @@ public class ContactService {
         }
 
         if (exists) {
-            throw new RuntimeException("Já existe um contato com esse CPF para este usuário");
+            throw new CpfAlreadyInUseException(cpf);
         }
     }
 

@@ -1,88 +1,94 @@
 package org.uex_back.service.address;
 
-import org.uex_back.dto.address.AddressSuggestion;
-import org.uex_back.dto.address.ViaCepResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.uex_back.dto.address.AddressSuggestion;
+import org.uex_back.dto.address.ViaCepResponse;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @Service
-public class ViaCepService {
+@RequiredArgsConstructor
+public class ViaCepService implements AddressLookupService {
 
-    private static final String VIACEP_URL_TEMPLATE =
-            "https://viacep.com.br/ws/%s/%s/%s/json/";
+    private static final String BASE_URL = "https://viacep.com.br/ws";
 
-    private static final String VIACEP_CEP_URL_TEMPLATE =
-            "https://viacep.com.br/ws/%s/json/";
+    private final RestTemplate restTemplate;
 
-
+    @Override
     public List<AddressSuggestion> search(String uf, String city, String street) {
-        if (uf == null || city == null || street == null) {
-            return Collections.emptyList();
+        if (isBlank(uf) || isBlank(city) || isBlank(street)) {
+            return List.of();
         }
 
-        try {
-            String encodedCity = URLEncoder.encode(city.trim(), StandardCharsets.UTF_8.toString());
-            String encodedStreet = URLEncoder.encode(street.trim(), StandardCharsets.UTF_8.toString());
+        String url = String.format(
+                "%s/%s/%s/%s/json/",
+                BASE_URL,
+                uf.trim(),
+                encode(city),
+                encode(street)
+        );
 
-            String url = String.format(VIACEP_URL_TEMPLATE, uf.trim(), encodedCity, encodedStreet);
+        ViaCepResponse[] response = restTemplate.getForObject(url, ViaCepResponse[].class);
 
-            RestTemplate restTemplate = new RestTemplate();
-            ViaCepResponse[] response = restTemplate.getForObject(url, ViaCepResponse[].class);
-
-            if (response == null || response.length == 0) {
-                return Collections.emptyList();
-            }
-
-            return Arrays.stream(response)
-                    .filter(r -> r.getErro() == null || !r.getErro())
-                    .map(r -> new AddressSuggestion(
-                            r.getCep(),
-                            r.getLogradouro(),
-                            r.getBairro(),
-                            r.getLocalidade(),
-                            r.getUf()
-                    ))
-                    .toList();
-
-        } catch (UnsupportedEncodingException e) {
-            return Collections.emptyList();
+        if (response == null) {
+            return List.of();
         }
+
+        return Arrays.stream(response)
+                .filter(this::isValid)
+                .map(this::toSuggestion)
+                .toList();
     }
 
-    public AddressSuggestion findByCep(String rawCep) {
-        if (rawCep == null) {
-            return null;
+    @Override
+    public Optional<AddressSuggestion> findByCep(String rawCep) {
+        String cep = normalizeCep(rawCep);
+        if (cep == null) {
+            return Optional.empty();
         }
 
-        // Mantém só dígitos
-        String cep = rawCep.replaceAll("\\D", "");
-
-        if (cep.length() != 8) {
-            return null;
-        }
-
-        String url = String.format(VIACEP_CEP_URL_TEMPLATE, cep);
-
-        RestTemplate restTemplate = new RestTemplate();
+        String url = String.format("%s/%s/json/", BASE_URL, cep);
         ViaCepResponse response = restTemplate.getForObject(url, ViaCepResponse.class);
 
-        if (response == null || Boolean.TRUE.equals(response.getErro())) {
-            return null;
+        if (!isValid(response)) {
+            return Optional.empty();
         }
 
+        return Optional.of(toSuggestion(response));
+    }
+
+    private boolean isValid(ViaCepResponse response) {
+        return response != null && !Boolean.TRUE.equals(response.getErro());
+    }
+
+    private AddressSuggestion toSuggestion(ViaCepResponse r) {
         return new AddressSuggestion(
-                response.getCep(),
-                response.getLogradouro(),
-                response.getBairro(),
-                response.getLocalidade(),
-                response.getUf()
+                r.getCep(),
+                r.getLogradouro(),
+                r.getBairro(),
+                r.getLocalidade(),
+                r.getUf()
         );
     }
+
+    private String normalizeCep(String rawCep) {
+        if (rawCep == null) return null;
+        String digits = rawCep.replaceAll("\\D", "");
+        return digits.length() == 8 ? digits : null;
+    }
+
+    private String encode(String value) {
+        return URLEncoder.encode(value.trim(), StandardCharsets.UTF_8);
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
 }
+

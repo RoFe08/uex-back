@@ -7,6 +7,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.uex_back.dto.auth.AuthResponse;
 import org.uex_back.dto.login.LoginRequest;
+import org.uex_back.exceptionhandler.InvalidPasswordException;
 import org.uex_back.model.User;
 import org.uex_back.repository.UserRepository;
 import org.uex_back.security.JwtService;
@@ -24,13 +25,13 @@ public class AuthService {
                 .findByEmail(request.email())
                 .orElseThrow(() -> new RuntimeException("Usuário ou senha inválidos"));
 
-        boolean senhaOk = passwordEncoder.matches(request.password(), user.getPasswordHash());
+        var matchPassword = passwordEncoder.matches(request.password(), user.getPasswordHash());
 
-        if (!senhaOk) {
+        if (!matchPassword) {
             throw new RuntimeException("Usuário ou senha inválidos");
         }
 
-        String token = jwtService.generateToken(user); // retorna JWT
+        var token = jwtService.generateToken(user); // retorna JWT
 
         return new AuthResponse(
                 token,
@@ -41,19 +42,18 @@ public class AuthService {
     }
 
     public void deleteCurrentUser(String password) {
-        User user = getCurrentUser();
+        var user = getCurrentUser();
 
-        boolean matchPassword = passwordEncoder.matches(password, user.getPasswordHash());
+        var matchPassword = passwordEncoder.matches(password, user.getPasswordHash());
         if (!matchPassword) {
-            throw new BadCredentialsException("Senha inválida");
+            throw new InvalidPasswordException();
         }
 
         userRepository.delete(user);
     }
 
     private User getCurrentUser() {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        String email = auth.getName();
+        var email = SecurityContextHolder.getContext().getAuthentication().getName();
 
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));

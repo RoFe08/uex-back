@@ -1,6 +1,7 @@
 package org.uex_back.controller;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.uex_back.dto.contact.ContactPageResponse;
 import org.uex_back.dto.contact.ContactRequest;
 import org.uex_back.dto.contact.ContactResponse;
@@ -10,50 +11,38 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/contacts")
+@RequiredArgsConstructor
 public class ContactController {
 
     private final ContactService contactService;
 
-    public ContactController(ContactService contactService) {
-        this.contactService = contactService;
-    }
-
     @GetMapping
-    public ResponseEntity<ContactPageResponse> list(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String term
-    ) {
+    public ResponseEntity<ContactPageResponse> list(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size, @RequestParam(required = false) String term) {
         ContactPageResponse result = contactService.list(term, page, size);
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ContactResponse> getById(@PathVariable Long id) {
-        ContactResponse response = contactService.getById(id);
+    @GetMapping("/{idContact}")
+    public ResponseEntity<ContactResponse> getById(@PathVariable Long idContact) {
+        ContactResponse response = contactService.getById(idContact);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping
-    public ResponseEntity<ContactResponse> create(
-            @Valid @RequestBody ContactRequest request
-    ) {
-        ContactResponse response = contactService.create(request);
+    public ResponseEntity<ContactResponse> create(@Valid @RequestBody ContactRequest contactRequest) {
+        ContactResponse response = contactService.create(contactRequest);
         return ResponseEntity.ok(response);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<ContactResponse> update(
-            @PathVariable Long id,
-            @Valid @RequestBody ContactRequest request
-    ) {
-        ContactResponse response = contactService.update(id, request);
+    @PutMapping("/{idContact}")
+    public ResponseEntity<ContactResponse> update(@PathVariable Long idContact, @Valid @RequestBody ContactRequest contactRequest) {
+        ContactResponse response = contactService.update(idContact, contactRequest);
         return ResponseEntity.ok(response);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        contactService.delete(id);
+    @DeleteMapping("/{idContact}")
+    public ResponseEntity<Void> delete(@PathVariable Long idContact) {
+        contactService.delete(idContact);
         return ResponseEntity.noContent().build();
     }
 }

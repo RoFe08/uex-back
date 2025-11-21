@@ -1,8 +1,12 @@
 package org.uex_back.dto.signup;
 
-public record SignupRequest(
-        String name,
-        String email,
-        String password
-) {}
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
+public class SignupRequest {
+    private String name;
+    private String email;
+    private String password;
+}

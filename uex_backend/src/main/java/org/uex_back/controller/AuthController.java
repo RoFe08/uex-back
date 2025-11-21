@@ -19,20 +19,20 @@ public class AuthController {
     private final UserRegisterService userRegisterService;
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
-        AuthResponse response = authService.login(request);
+    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest loginRequest) {
+        AuthResponse response = authService.login(loginRequest);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<AuthResponse> signup(@RequestBody SignupRequest request) {
-        AuthResponse response = userRegisterService.signup(request);
+    public ResponseEntity<AuthResponse> signup(@RequestBody SignupRequest signupRequest) {
+        AuthResponse response = userRegisterService.signup(signupRequest);
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/account")
-    public ResponseEntity<Void> deleteAccount(@RequestBody DeleteAccountRequest request) {
-        authService.deleteCurrentUser(request.password());
+    public ResponseEntity<Void> deleteAccount(@RequestBody DeleteAccountRequest deleteAccountRequest) {
+        authService.deleteCurrentUser(deleteAccountRequest.password());
         return ResponseEntity.noContent().build();
     }
 

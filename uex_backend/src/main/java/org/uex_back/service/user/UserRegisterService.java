@@ -1,6 +1,7 @@
 package org.uex_back.service.user;
 
 import lombok.RequiredArgsConstructor;
+import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.uex_back.dto.auth.AuthResponse;
@@ -17,19 +18,17 @@ public class UserRegisterService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final ModelMapper modelMapper;
 
     public AuthResponse signup(SignupRequest request) {
-        if (userRepository.existsByEmail(request.email())) {
-            throw new EmailAlreadyInUseException(request.email());
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new EmailAlreadyInUseException(request.getEmail());
         }
 
-        User user = new User();
-        user.setName(request.name());
-        user.setEmail(request.email());
-        user.setPasswordHash(passwordEncoder.encode(request.password()));
+        var user = modelMapper.map(request, User.class);
+        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
 
         User saved = userRepository.save(user);
-
         String token = jwtService.generateToken(saved);
 
         return new AuthResponse(

@@ -5,10 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.uex_back.dto.error.ErrorMessageResponse;
-import org.uex_back.exceptionhandler.CpfAlreadyInUseException;
-import org.uex_back.exceptionhandler.EmailAlreadyInUseException;
-import org.uex_back.exceptionhandler.InvalidCpfException;
-import org.uex_back.exceptionhandler.InvalidPasswordException;
+import org.uex_back.exceptionhandler.*;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -41,5 +38,11 @@ public class GlobalExceptionHandler {
                 .body(new ErrorMessageResponse(ex.getMessage()));
     }
 
+    @ExceptionHandler(EmailNotFoundException.class)
+    public ResponseEntity<ErrorMessageResponse> handleInvalidCredential(EmailNotFoundException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ErrorMessageResponse(ex.getMessage()));
+    }
 
 }

@@ -1,12 +1,12 @@
 package org.uex_back.service.auth;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.uex_back.dto.auth.AuthResponse;
 import org.uex_back.dto.login.LoginRequest;
+import org.uex_back.exceptionhandler.EmailNotFoundException;
 import org.uex_back.exceptionhandler.InvalidPasswordException;
 import org.uex_back.model.User;
 import org.uex_back.repository.UserRepository;
@@ -23,12 +23,12 @@ public class AuthService {
     public AuthResponse login(LoginRequest request) {
         var user = userRepository
                 .findByEmail(request.email())
-                .orElseThrow(() -> new RuntimeException("Usuário ou senha inválidos"));
+                .orElseThrow(EmailNotFoundException::new);
 
         var matchPassword = passwordEncoder.matches(request.password(), user.getPasswordHash());
 
         if (!matchPassword) {
-            throw new RuntimeException("Usuário ou senha inválidos");
+            throw new InvalidPasswordException();
         }
 
         var token = jwtService.generateToken(user); // retorna JWT

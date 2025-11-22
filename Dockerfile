@@ -1,19 +1,27 @@
-FROM eclipse-temurin:17-jdk-alpine AS build
+# ===== STAGE 1: build =====
+FROM maven:3.9-eclipse-temurin-17 AS build
 
 WORKDIR /app
 
+# Copia só o pom primeiro (melhora cache)
 COPY pom.xml .
-COPY mvnw .
-COPY .mvn .mvn
+
+# Baixa dependências (opcional, mas acelera builds)
+RUN mvn -B -e dependency:go-offline
+
+# Agora copia o código
 COPY src ./src
 
-RUN mvn clean package -DskipTests
+# Builda o jar
+RUN mvn -B -e clean package -DskipTests
 
-FROM eclipse-temurin:17-jre-alpine
+# ===== STAGE 2: runtime =====
+FROM eclipse-temurin:17-jdk-jammy
 
 WORKDIR /app
 
-COPY --from=build /app/target/uex_backend-1.0-SNAPSHOT.jar app.jar
+# copia o jar gerado do stage de build
+COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8080
 
